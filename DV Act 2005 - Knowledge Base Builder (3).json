@@ -1,0 +1,541 @@
+{
+  "name": "DV Act 2005 - Knowledge Base Builder",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dv-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c407a1de-ee1e-4f8f-a7e1-7a30374b140d",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        16,
+        800
+      ],
+      "webhookId": "dv-legal-agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "user-question",
+              "name": "question",
+              "value": "={{ $json.body.question }}",
+              "type": "string"
+            },
+            {
+              "id": "session-id",
+              "name": "session_id",
+              "value": "={{ $json.body.session_id || 'session_' + $now.toUnixInteger() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7dc6f6df-34b0-4b43-bb4f-c57a923c3d10",
+      "name": "Extract Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a Legal Awareness AI Agent specializing in the Protection of Women from Domestic Violence Act, 2005 (India).\n\n🎯 YOUR MISSION:\nHelp users understand their rights and protections under the DV Act 2005 by:\n1. SEARCHING the knowledge base for relevant legal provisions\n2. REASONING about the user's situation\n3. PROVIDING clear, actionable guidance\n\n🧠 YOUR CAPABILITIES:\n- Use the vector_store_tool to search DV Act 2005 provisions\n- Cite specific sections when available\n- Explain legal concepts in simple language\n- Suggest evidence types and remedies\n- Maintain conversation context with memory\n\n⚖️ YOUR CONSTRAINTS:\n- Use ONLY retrieved context from the knowledge base\n- Never hallucinate or invent legal provisions\n- Do NOT draft FIRs or court petitions\n- Do NOT predict case outcomes\n- Do NOT give procedural manipulation advice\n- Remain neutral and balanced\n\n📋 YOUR RESPONSE FORMAT:\n1. Direct answer to the question\n2. Reference specific sections (if found)\n3. Explain in plain language\n4. Mention possible remedies under DV Act\n5. Suggest relevant evidence types (if applicable)\n\n🔄 YOUR PROCESS:\n1. THINK: Understand what the user is asking\n2. SEARCH: Use vector_store_tool to find relevant sections\n3. REASON: Analyze the retrieved information\n4. RESPOND: Provide clear, accurate guidance\n\nIf context is insufficient, clearly state: \"I cannot find specific information on this aspect in the DV Act 2005. Please consult a qualified lawyer.\"\n\nALWAYS END WITH:\n⚖️ DISCLAIMER: This is informational guidance based on the DV Act 2005, not legal advice. Consult a qualified lawyer for case-specific counsel.\n\nUser Question: {{ $json.question }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "id": "554bf704-4dad-4681-97af-d324e03cbe5e",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        512,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Input').item.json.session_id }}"
+      },
+      "id": "e3aee454-5e10-4cc9-ba31-93487d0ada51",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "question",
+              "name": "question",
+              "value": "={{ $('Extract Input').first().json.question }}",
+              "type": "string"
+            },
+            {
+              "id": "answer",
+              "name": "answer",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "session",
+              "name": "session_id",
+              "value": "={{ $('Extract Input').first().json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "source",
+              "name": "source_document",
+              "value": "Protection of Women from Domestic Violence Act, 2005",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "55ca27ef-4bd2-4638-b470-71fe9bc12417",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "0a648b3b-a7e4-4081-a52f-8a62e17c3ecb",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1088,
+        368
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d44b5bd0-58ec-4d87-aaeb-6c00e6756e7e",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "C:\\Users\\User\\.n8n-files\\DV_Act_2005.pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -864,
+        352
+      ],
+      "id": "ce424d3c-afa5-4fef-a5c5-061c10748327",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {
+          "keepSource": "binary"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -608,
+        352
+      ],
+      "id": "3a839995-f154-47e4-bb9d-5345422aa2df",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.text;\n\nreturn [{\n  json: {\n    pageContent: text,\n    metadata: {\n      source: \"DV_Act_2005\",\n      document_type: \"legal_act\",\n      jurisdiction: \"India\",\n      year: 2005\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        352
+      ],
+      "id": "de01379a-59a4-4f60-9750-793abdf19604",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -224,
+        144
+      ],
+      "id": "9d3fa8a7-d682-42f5-a4e1-1dc7e3105a2a",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "h0DV2Z3OdQAh2HWi",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -208,
+        528
+      ],
+      "id": "21c64cfe-45b0-4c96-a6c7-b1bfdcb8e56e",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "Ypcmg6uiiy2zifDq",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "Metadata",
+                "value": "=={{ $json.metadata }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -16,
+        320
+      ],
+      "id": "9ffa2291-f777-44e7-be0a-8ad1ed2a408c",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the Protection of Women from Domestic Violence Act, 2005 knowledge base. Use this to find legal provisions, definitions, remedies, and procedures related to domestic violence in India.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        672
+      ],
+      "id": "2d0764f6-63ee-4f3e-861c-58a3e1bc08ad",
+      "name": "Supabase Vector Store2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "h0DV2Z3OdQAh2HWi",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        928
+      ],
+      "id": "f55389d0-016d-4876-a77d-1158e8d3a649",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "Ypcmg6uiiy2zifDq",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        352,
+        688
+      ],
+      "id": "369f6f99-4a0f-4c77-b618-13f22fe298e4",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "ap9cg5vQtXQIJcke",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        0,
+        480
+      ],
+      "id": "a9553b14-7354-4fff-8a9b-3dbb0e8fad3a",
+      "name": "Recursive Character Text Splitter"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "40d0bb1f-6b4a-4c97-b491-631571ccba0c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ccb9a834959c0249cba0588b0898d02b6aadd9c6597c9842d4d3933e23d7563"
+  },
+  "id": "1THrcEOA3uSM2CrR",
+  "tags": []
+}
